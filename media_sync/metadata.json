@@ -1,0 +1,47 @@
+{
+    "name": "跨设备媒体库同步",
+    "version": "1.0.0",
+    "description": "实现PC、移动设备和智能电视之间的视频库同步，随时随地访问您的媒体收藏",
+    "author": "Claude",
+    "main": "plugin.py",
+    "icon": "sync_icon.png",
+    "category": "utility",
+    "requirements": ["requests", "beautifulsoup4"],
+    "platforms": ["Windows", "macOS", "Linux"],
+    "min_app_version": "1.0.0",
+    "settings": {
+      "local_media_dir": {
+        "type": "string",
+        "default": "",
+        "description": "本地媒体库目录"
+      },
+      "external_media_dir": {
+        "type": "string",
+        "default": "",
+        "description": "外部媒体库目录"
+      },
+      "webdav_url": {
+        "type": "string",
+        "default": "",
+        "description": "WebDAV服务器URL"
+      },
+      "sync_mode": {
+        "type": "string",
+        "default": "bidirectional",
+        "options": ["upload", "download", "bidirectional"],
+        "description": "同步模式"
+      },
+      "auto_sync": {
+        "type": "boolean",
+        "default": false,
+        "description": "是否启用自动同步"
+      }
+    },
+    "features": [
+      "本地目录同步",
+      "WebDAV云同步",
+      "自动同步",
+      "多种同步模式",
+      "详细同步日志"
+    ]
+  }
