@@ -5,7 +5,7 @@
     "author": "Claude",
     "main": "plugin.py",
     "icon": "sync_icon.png",
-    "category": "utility",
+    "category": "集成",
     "requirements": ["requests", "beautifulsoup4"],
     "platforms": ["Windows", "macOS", "Linux"],
     "min_app_version": "1.0.0",
