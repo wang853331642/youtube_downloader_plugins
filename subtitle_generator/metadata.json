@@ -1,0 +1,22 @@
+{
+    "name": "字幕生成器",
+    "version": "1.0.0",
+    "author": "YT下载器团队",
+    "description": "从视频中自动生成字幕，支持多种语言和格式",
+    "category": "字幕工具",
+    "requirements": ["openai-whisper", "ffmpeg"],
+    "icon": "subtitle_icon.png",
+    "homepage": "https://github.com/wang853331642/youtube_downloader_plugins",
+    "support_url": "https://github.com/wang853331642/youtube_downloader_plugins/issues",
+    "compatibility": {
+      "min_app_version": "1.0.0",
+      "max_app_version": ""
+    },
+    "features": [
+      "支持多种语言识别",
+      "支持SRT、VTT、ASS字幕格式",
+      "支持Whisper API和本地Whisper模型",
+      "实时显示字幕生成进度",
+      "提供字幕预览功能"
+    ]
+  }
