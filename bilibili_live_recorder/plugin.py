@@ -833,7 +833,7 @@ class BilibiliLiveRecorderPlugin(PluginBase):
     def __init__(self, app_instance=None):
         super().__init__(app_instance)
         # 添加插件元数据
-        self.name = "B站直播录制"
+        self.name = "B站直播录制器"
         self.version = "1.0.0"
         self.description = "录制B站直播和下载回放视频，支持自定义设置，界面美观，使用简单"
         self.author = "YT下载器团队"
