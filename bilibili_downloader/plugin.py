@@ -463,7 +463,8 @@ class BilibiliDownloaderPlugin(PluginBase):
         dialog = QDialog(self.app)
         dialog.setWindowTitle("B站视频下载")
         dialog.resize(500, 400)
-        
+        # 去除右上角的问号按钮
+        dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         layout = QVBoxLayout(dialog)
         
         # 创建下载表单

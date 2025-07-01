@@ -1,0 +1,10 @@
+{
+  "output_dir": "C:/Users/ROG/Downloads/BilibiliLive",
+  "quality": "best",
+  "format": "mp4",
+  "record_danmaku": false,
+  "auto_record_rooms": [],
+  "check_interval": 60,
+  "auto_convert": false,
+  "history": []
+}

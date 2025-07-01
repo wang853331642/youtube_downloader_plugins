@@ -1,0 +1,22 @@
+{
+    "name": "TikTok短视频下载器",
+    "version": "1.0.0",
+    "author": "YT下载器团队",
+    "description": "使用yt-dlp命令下载TikTok视频，支持去除水印，界面美观，使用简单",
+    "category": "视频下载",
+    "requirements": ["yt-dlp"],
+    "icon": "tiktok_icon.png",
+    "homepage": "https://github.com/wang853331642/youtube_downloader_plugins",
+    "support_url": "https://github.com/wang853331642/youtube_downloader_plugins/issues",
+    "compatibility": {
+      "min_app_version": "1.0.0",
+      "max_app_version": ""
+    },
+    "features": [
+      "支持下载TikTok短视频",
+      "支持无水印视频下载",
+      "简洁美观的下载界面",
+      "实时显示下载进度",
+      "显示下载完成详细信息"
+    ]
+  }

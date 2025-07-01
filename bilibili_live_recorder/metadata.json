@@ -1,0 +1,26 @@
+{
+    "name": "B站直播录制器",
+    "version": "1.0.0",
+    "author": "YT下载器团队",
+    "main": "plugin.py",
+    "class": "BilibiliLiveRecorderPlugin",
+    "description": "录制B站直播和下载回放，支持多房间同时录制",
+    "category": "工具",
+    "requirements": ["ffmpeg", "you-get"],
+    "icon": "bilibili_icon.png",
+    "homepage": "https://github.com/wang853331642/youtube_downloader_plugins",
+    "support_url": "https://github.com/wang853331642/youtube_downloader_plugins/issues",
+    "compatibility": {
+      "min_app_version": "1.0.0",
+      "max_app_version": ""
+    },
+    "features": [
+      "录制B站直播内容",
+      "下载B站直播回放",
+      "支持多房间同时录制",
+      "自动录制指定房间",
+      "录制弹幕",
+      "自动格式转换",
+      "录制管理与历史记录"
+    ]
+  }

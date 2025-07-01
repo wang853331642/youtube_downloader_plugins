@@ -1,10 +1,10 @@
-# 在 plugins/acfun_downloader/plugin.py 中
 import re
 import os
 import subprocess
+import json
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QLabel, 
                             QLineEdit, QPushButton, QMessageBox, QProgressBar, 
-                            QGroupBox, QDialog, QHBoxLayout)
+                            QGroupBox, QDialog, QHBoxLayout, QCheckBox)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QSize
 from PyQt5.QtGui import QIcon
 
@@ -17,16 +17,17 @@ except ImportError:
         def __init__(self, app_instance=None):
             self.app = app_instance
             
-class AcfunDownloadThread(QThread):
-    """AcFun视频下载线程"""
+class TiktokDownloadThread(QThread):
+    """TikTok视频下载线程"""
     progress_updated = pyqtSignal(int, str)
     download_complete = pyqtSignal(bool, str, str)  # 成功状态, 消息, 文件路径
     
-    def __init__(self, url, output_dir):
+    def __init__(self, url, output_dir, no_watermark=True):
         super().__init__()
         
         self.url = url
         self.output_dir = output_dir
+        self.no_watermark = no_watermark
         self.is_running = True
         self.file_path = ""
         
@@ -50,7 +51,14 @@ class AcfunDownloadThread(QThread):
                 "--no-check-certificate"  # 不检查证书
             ]
             
-            self.progress_updated.emit(5, "正在连接AcFun...")
+            # 添加无水印选项
+            if self.no_watermark:
+                cmd.append("--remux-video")
+                cmd.append("mp4")
+                cmd.append("--postprocessor-args")
+                cmd.append("ffmpeg:-c:v libx264 -c:a aac -movflags +faststart")
+            
+            self.progress_updated.emit(5, "正在连接TikTok...")
             
             # 启动下载进程
             process = subprocess.Popen(
@@ -106,6 +114,10 @@ class AcfunDownloadThread(QThread):
                         self.progress_updated.emit(50, f"下载中... ETA: {eta_parts}")
                     except:
                         pass
+                        
+                # 检测去水印处理
+                elif '[ffmpeg]' in line:
+                    self.progress_updated.emit(80, "正在去除水印...")
             
             # 检查是否成功
             if process.returncode == 0:
@@ -126,51 +138,51 @@ class AcfunDownloadThread(QThread):
         """安全停止下载过程"""
         self.is_running = False
 
-class AcfunDownloaderPlugin(PluginBase):
-    """A站视频下载插件 - 使用yt-dlp下载AcFun视频"""
+class TiktokDownloaderPlugin(PluginBase):
+    """TikTok短视频下载插件 - 使用yt-dlp下载TikTok视频"""
     
     def __init__(self, app_instance=None):
         super().__init__(app_instance)
-        self.name = "A站视频下载器"
-        self.version = "5.1"
-        self.description = "使用yt-dlp命令下载AcFun视频，界面美观，使用简单"
+        self.name = "TikTok短视频下载器"
+        self.version = "1.0.0"
+        self.description = "使用yt-dlp命令下载TikTok视频，支持去除水印，界面美观，使用简单"
         self.author = "YT下载器团队"
         self.app = app_instance
         
     def initialize(self):
         """初始化插件"""
-        print("A站下载插件已初始化")
-        self.add_acfun_action()
+        print("TikTok下载插件已初始化")
+        self.add_tiktok_action()
         return True
     
-    def add_acfun_action(self):
-        """添加A站下载按钮到主界面"""
+    def add_tiktok_action(self):
+        """添加TikTok下载按钮到主界面"""
         try:
-            # 创建A站下载按钮
-            self.acfun_button = QPushButton("A站下载")
+            # 创建TikTok下载按钮
+            self.tiktok_button = QPushButton("TikTok下载")
             
             # 添加图标
             icon_found = False
             
             # 1. 尝试在插件目录找图标
-            icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "acfun_icon.png")
+            icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tiktok_icon.png")
             if os.path.exists(icon_path):
-                self.acfun_button.setIcon(QIcon(icon_path))
-                self.acfun_button.setIconSize(QSize(20, 20))
+                self.tiktok_button.setIcon(QIcon(icon_path))
+                self.tiktok_button.setIconSize(QSize(20, 20))
                 icon_found = True
             
             # 2. 尝试在应用资源目录找图标
             if not icon_found and hasattr(self.app, "resource_dir"):
-                app_icon_path = os.path.join(self.app.resource_dir, "icons", "acfun.png")
+                app_icon_path = os.path.join(self.app.resource_dir, "icons", "tiktok.png")
                 if os.path.exists(app_icon_path):
-                    self.acfun_button.setIcon(QIcon(app_icon_path))
-                    self.acfun_button.setIconSize(QSize(20, 20))
+                    self.tiktok_button.setIcon(QIcon(app_icon_path))
+                    self.tiktok_button.setIconSize(QSize(20, 20))
                     icon_found = True
             
             # 修改按钮样式
-            self.acfun_button.setStyleSheet("""
+            self.tiktok_button.setStyleSheet("""
                 QPushButton {
-                    background-color: #FD4C5D;  /* A站红色 */
+                    background-color: #000000;  /* TikTok黑色 */
                     color: white;
                     border: none;
                     border-radius: 5px;
@@ -178,64 +190,84 @@ class AcfunDownloaderPlugin(PluginBase):
                     font-weight: bold;
                 }
                 QPushButton:hover {
-                    background-color: #FE6C7A;
-                    border: 1px solid #FD4C5D;
+                    background-color: #25F4EE;  /* TikTok青色 */
+                    color: black;
+                    border: 1px solid #FE2C55;  /* TikTok红色 */
                 }
                 QPushButton:pressed {
-                    background-color: #E43C4D;
+                    background-color: #FE2C55;  /* TikTok红色 */
+                    color: white;
                 }
             """)
-            self.acfun_button.setCursor(Qt.PointingHandCursor)
+            self.tiktok_button.setCursor(Qt.PointingHandCursor)
             
             # 设置固定宽度
-            self.acfun_button.setFixedWidth(100)
+            self.tiktok_button.setFixedWidth(120)
             
             # 连接点击事件
-            self.acfun_button.clicked.connect(self.show_acfun_dialog)
+            self.tiktok_button.clicked.connect(self.show_tiktok_dialog)
             
-            # 尝试添加到界面，优先放在字幕按钮旁边
+            # 尝试添加到界面，优先放在A站按钮旁边或字幕按钮旁边
             added = False
             
-            # 1. 尝试找到字幕按钮并在其旁边添加
-            if hasattr(self.app, 'subtitle_btn') and hasattr(self.app, 'history_layout'):
+            # 1. 尝试找到A站按钮并在其旁边添加
+            if not added:
+                for widget in self.app.findChildren(QPushButton):
+                    if widget.text() == "A站下载":
+                        parent = widget.parent()
+                        if parent and parent.layout():
+                            layout = parent.layout()
+                            # 遍历布局查找按钮位置
+                            for i in range(layout.count()):
+                                item = layout.itemAt(i)
+                                if item and item.widget() == widget:
+                                    # 找到A站按钮后，在其后面插入TikTok按钮
+                                    layout.insertWidget(i+1, self.tiktok_button)
+                                    print("已添加TikTok下载按钮到A站按钮旁边")
+                                    added = True
+                                    break
+                        break
+            
+            # 2. 如果没有找到A站按钮，尝试找字幕按钮
+            if not added and hasattr(self.app, 'subtitle_btn') and hasattr(self.app, 'history_layout'):
                 # 找出字幕按钮在布局中的位置
                 for i in range(self.app.history_layout.count()):
                     item = self.app.history_layout.itemAt(i)
                     if item and item.widget() == self.app.subtitle_btn:
-                        # 找到字幕按钮后，在其后面插入A站按钮
-                        self.app.history_layout.insertWidget(i+1, self.acfun_button)
-                        print("已添加A站下载按钮到字幕按钮旁边")
+                        # 找到字幕按钮后，在其后面插入TikTok按钮
+                        self.app.history_layout.insertWidget(i+1, self.tiktok_button)
+                        print("已添加TikTok下载按钮到字幕按钮旁边")
                         added = True
                         break
             
-            # 2. 如果没有找到字幕按钮，则添加到默认位置
+            # 3. 如果没有找到合适的位置，则添加到默认位置
             if not added:
                 if hasattr(self.app, 'history_layout'):
-                    self.app.history_layout.addWidget(self.acfun_button)
-                    print("已添加A站下载按钮到history_layout")
+                    self.app.history_layout.addWidget(self.tiktok_button)
+                    print("已添加TikTok下载按钮到history_layout")
                 elif hasattr(self.app, 'toolbar_layout'):
-                    self.app.toolbar_layout.addWidget(self.acfun_button)
-                    print("已添加A站下载按钮到toolbar_layout")
+                    self.app.toolbar_layout.addWidget(self.tiktok_button)
+                    print("已添加TikTok下载按钮到toolbar_layout")
                 else:
-                    print("无法找到合适的布局添加A站下载按钮")
+                    print("无法找到合适的布局添加TikTok下载按钮")
                 
         except Exception as e:
-            print(f"添加A站下载按钮失败: {e}")
+            print(f"添加TikTok下载按钮失败: {e}")
             
-    def show_acfun_dialog(self):
-        """显示AcFun下载对话框"""
+    def show_tiktok_dialog(self):
+        """显示TikTok下载对话框"""
         # 检查yt-dlp是否安装
         try:
             subprocess.run(["yt-dlp", "--version"], capture_output=True, text=True)
         except:
             QMessageBox.critical(self.app, "缺少必要组件", 
-                "无法找到yt-dlp，这是下载AcFun视频所必需的。\n\n"
+                "无法找到yt-dlp，这是下载TikTok视频所必需的。\n\n"
                 "请安装yt-dlp: pip install yt-dlp -U")
             return
             
         dialog = QDialog(self.app)
-        dialog.setWindowTitle("A站视频下载")
-        dialog.resize(520, 320)
+        dialog.setWindowTitle("TikTok视频下载")
+        dialog.resize(520, 350)
         # 去除右上角的问号按钮
         dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         # 设置窗口样式
@@ -254,7 +286,7 @@ class AcfunDownloaderPlugin(PluginBase):
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
-                color: #FD4C5D;
+                color: #FE2C55;  /* TikTok红色 */
             }
             QLabel {
                 color: #333333;
@@ -267,7 +299,7 @@ class AcfunDownloaderPlugin(PluginBase):
                 height: 20px;
             }
             QProgressBar::chunk {
-                background-color: #FD4C5D;
+                background-color: #FE2C55;  /* TikTok红色 */
                 width: 5px;
                 margin: 0px;
             }
@@ -276,18 +308,30 @@ class AcfunDownloaderPlugin(PluginBase):
                 padding: 8px 16px;
                 font-weight: bold;
             }
+            QCheckBox {
+                color: #333333;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+            }
+            QCheckBox::indicator:checked {
+                image: url(icons/checkbox_checked.png);
+                background-color: #25F4EE;  /* TikTok青色 */
+                border: 1px solid #FE2C55;  /* TikTok红色 */
+            }
         """)
         
         layout = QVBoxLayout(dialog)
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(10)
         
-        # A站标题显示
+        # TikTok标题显示
         title_layout = QHBoxLayout()
-        title_icon = QLabel("🅰️")
-        title_icon.setStyleSheet("font-size: 24px; color: #FD4C5D;")
-        title_text = QLabel("AcFun视频下载")
-        title_text.setStyleSheet("font-size: 18px; font-weight: bold; color: #FD4C5D;")
+        title_icon = QLabel("📱")
+        title_icon.setStyleSheet("font-size: 24px;")
+        title_text = QLabel("TikTok视频下载")
+        title_text.setStyleSheet("font-size: 18px; font-weight: bold; color: #FE2C55;")
         title_layout.addWidget(title_icon)
         title_layout.addWidget(title_text)
         title_layout.addStretch()
@@ -302,21 +346,26 @@ class AcfunDownloaderPlugin(PluginBase):
         # URL输入框
         self.url_input = QLineEdit()
         self.url_input.setText("")
-        self.url_input.setPlaceholderText("请输入AcFun视频链接")
+        self.url_input.setPlaceholderText("请输入TikTok视频链接")
         self.url_input.setStyleSheet("""
             QLineEdit {
                 border: 1px solid #CCCCCC;
                 border-radius: 4px;
                 padding: 5px;
                 background-color: white;
-                selection-background-color: #FD4C5D;
+                selection-background-color: #FE2C55;  /* TikTok红色 */
             }
             QLineEdit:focus {
-                border: 1px solid #FD4C5D;
+                border: 1px solid #FE2C55;  /* TikTok红色 */
             }
         """)
         self.url_input.setMinimumHeight(28)
         form_layout.addRow("视频链接:", self.url_input)
+        
+        # 去水印选项
+        self.no_watermark_check = QCheckBox("去除视频水印（可能需要额外处理时间）")
+        self.no_watermark_check.setChecked(True)
+        form_layout.addRow("", self.no_watermark_check)
         
         layout.addWidget(form_group)
         
@@ -336,6 +385,11 @@ class AcfunDownloaderPlugin(PluginBase):
         
         layout.addWidget(progress_group)
         
+        # 提示说明
+        tips_label = QLabel("提示: TikTok视频链接可从应用内分享按钮获取，或从浏览器地址栏复制")
+        tips_label.setStyleSheet("color: #757575; font-size: 11px;")
+        layout.addWidget(tips_label)
+        
         # 按钮布局
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(10)
@@ -344,18 +398,18 @@ class AcfunDownloaderPlugin(PluginBase):
         self.download_btn = QPushButton("开始下载")
         self.download_btn.setStyleSheet("""
             QPushButton {
-                background-color: #FD4C5D;
+                background-color: #FE2C55;  /* TikTok红色 */
                 color: white;
                 border: none;
             }
             QPushButton:hover {
-                background-color: #FE6C7A;
+                background-color: #FF4D70;
             }
             QPushButton:pressed {
-                background-color: #E43C4D;
+                background-color: #E6254C;
             }
             QPushButton:disabled {
-                background-color: #FFB3BE;
+                background-color: #FFCCD5;
             }
         """)
         self.download_btn.setCursor(Qt.PointingHandCursor)
@@ -409,10 +463,8 @@ class AcfunDownloaderPlugin(PluginBase):
         
         layout.addLayout(buttons_layout)
         
-      
-        
         # 版权信息
-        version_label = QLabel(f"A站下载器 v{self.version} | {self.author}")
+        version_label = QLabel(f"TikTok下载器 v{self.version} | {self.author}")
         version_label.setStyleSheet("color: #BDBDBD; font-size: 10px;")
         version_label.setAlignment(Qt.AlignRight)
         layout.addWidget(version_label)
@@ -421,10 +473,10 @@ class AcfunDownloaderPlugin(PluginBase):
         dialog.exec_()
         
     def start_download(self):
-        """开始下载AcFun视频"""
+        """开始下载TikTok视频"""
         url = self.url_input.text().strip()
         if not url:
-            QMessageBox.warning(None, "输入错误", "请输入有效的AcFun视频链接")
+            QMessageBox.warning(None, "输入错误", "请输入有效的TikTok视频链接")
             return
             
         # 获取输出目录
@@ -432,8 +484,11 @@ class AcfunDownloaderPlugin(PluginBase):
         if hasattr(self.app, 'download_dir'):
             output_dir = self.app.download_dir
             
+        # 获取去水印选项
+        no_watermark = self.no_watermark_check.isChecked()
+            
         # 创建并启动下载线程
-        self.download_thread = AcfunDownloadThread(url, output_dir)
+        self.download_thread = TiktokDownloadThread(url, output_dir, no_watermark)
         self.download_thread.progress_updated.connect(self.update_progress)
         self.download_thread.download_complete.connect(self.on_download_complete)
         
@@ -503,36 +558,34 @@ class AcfunDownloaderPlugin(PluginBase):
 
     def cleanup_ui(self):
         """清理插件添加的UI元素"""
-        if hasattr(self, 'acfun_button') and self.acfun_button:
+        if hasattr(self, 'tiktok_button') and self.tiktok_button:
             try:
                 # 从布局中移除按钮
-                button = self.acfun_button
+                button = self.tiktok_button
                 parent = button.parent()
                 if parent:
                     layout = parent.layout()
                     if layout:
                         layout.removeWidget(button)
-                button.setParent(None)  # 断开与父对象的连接，但不删除按钮对象
-                print(f"已清理A站下载按钮")
+                button.setParent(None)  # 断开与父对象的连接
+                print(f"已清理TikTok下载按钮")
             except Exception as e:
-                print(f"清理A站下载按钮失败: {e}")
-        
-        # 还可以清理其他UI元素（如果有的话）
+                print(f"清理TikTok下载按钮失败: {e}")
 
     def get_hooks(self):
         """返回此插件提供的所有钩子"""
         return {
             "on_startup": self.on_startup,
             "on_disable": self.on_disable,
-            "custom_action": self.add_acfun_action
+            "custom_action": self.add_tiktok_action
         }
         
     def on_startup(self):
         """应用启动时执行"""
-        print("A站下载插件已启动")
-        self.add_acfun_action()
+        print("TikTok下载插件已启动")
+        self.add_tiktok_action()
         
     def on_disable(self):
         """插件被禁用时执行"""
-        print("A站下载插件被禁用")
+        print("TikTok下载插件被禁用")
         self.cleanup_ui()
